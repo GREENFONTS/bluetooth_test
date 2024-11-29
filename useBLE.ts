@@ -32,27 +32,27 @@ function useBLE(): BluetoothLowEnergyApi {
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
   const [isManagerInitialized, setIsManagerInitialized] = useState(false);
-  const [bluetoothState, setBluetoothState] = useState('Unknown');
+  const [bluetoothState, setBluetoothState] = useState("Unknown");
 
   useEffect(() => {
     const initializeBLE = async () => {
       try {
         const state = await bleManager.state();
-        console.log('Initial BLE state:', state);
+        console.log("Initial BLE state:", state);
         setBluetoothState(state);
-        
-        if (state === 'PoweredOn') {
+
+        if (state === "PoweredOn") {
           setIsManagerInitialized(true);
         }
       } catch (error) {
-        console.error('Failed to initialize BLE:', error);
+        console.error("Failed to initialize BLE:", error);
       }
     };
 
     const subscription = bleManager.onStateChange((state) => {
-      console.log('BLE state changed:', state);
+      console.log("BLE state changed:", state);
       setBluetoothState(state);
-      if (state === 'PoweredOn') {
+      if (state === "PoweredOn") {
         setIsManagerInitialized(true);
       } else {
         setIsManagerInitialized(false);
@@ -129,18 +129,18 @@ function useBLE(): BluetoothLowEnergyApi {
   const scanForPeripherals = async () => {
     try {
       if (!isManagerInitialized) {
-        console.log('BLE Manager not initialized');
+        console.log("BLE Manager not initialized");
         return;
       }
 
-      if (bluetoothState !== 'PoweredOn') {
-        console.log('Bluetooth is not powered on');
+      if (bluetoothState !== "PoweredOn") {
+        console.log("Bluetooth is not powered on");
         return;
       }
 
       const permissionsGranted = await requestPermissions();
       if (!permissionsGranted) {
-        console.log('Required permissions not granted');
+        console.log("Required permissions not granted");
         return;
       }
 
@@ -152,15 +152,14 @@ function useBLE(): BluetoothLowEnergyApi {
         }
 
         if (device) {
-       
-
           setAllDevices((prevState: Device[]) => {
-            if (!isDuplicteDevice(prevState, device)) {
-              console.log({
-                name: device.name,
-                id: device.id,
-                rssi: device.rssi
-              })
+            if (
+              !isDuplicteDevice(prevState, device) &&
+              device.name === null &&
+              device?.rssi &&
+              device?.rssi > -50
+            ) {
+              console.log(device);
               return [...prevState, device];
             }
             return prevState;
@@ -172,7 +171,6 @@ function useBLE(): BluetoothLowEnergyApi {
         bleManager.stopDeviceScan();
         console.log("Stopped device scan");
       }, 50000);
-
     } catch (error) {
       console.error("Scan failed:", error);
     }
@@ -181,23 +179,24 @@ function useBLE(): BluetoothLowEnergyApi {
   const connectToDevice = async (device: Device) => {
     try {
       if (!isManagerInitialized) {
-        console.log('BLE Manager not initialized');
+        console.log("BLE Manager not initialized");
         return;
       }
 
       console.log("Attempting to connect to device:", device.name, device.id);
       const deviceConnection = await bleManager.connectToDevice(device.id);
-      console.log("Connected to device:", deviceConnection.name);
+      console.log("Connected to device:", deviceConnection);
 
       setConnectedDevice(deviceConnection);
-      const services = await deviceConnection.discoverAllServicesAndCharacteristics();
+      const services =
+        await deviceConnection.discoverAllServicesAndCharacteristics();
       console.log("Discovered services:", services);
 
       bleManager.stopDeviceScan();
       startStreamingData(deviceConnection);
     } catch (e) {
       console.error("Failed to connect:", e);
-      
+
       // Optional: Implement retry logic
       // setTimeout(() => {
       //   console.log("Retrying connection to device:", device.name);
