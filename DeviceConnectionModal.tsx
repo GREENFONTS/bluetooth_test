@@ -44,8 +44,6 @@ const DeviceModalListItem: FC<DeviceModalListItemProps> = (props) => {
 const DeviceModal: FC<DeviceModalProps> = (props) => {
   const { devices, visible, connectToPeripheral, closeModal } = props;
 
-  console.log("devices", devices);
-
   const renderDeviceModalListItem = useCallback(
     (item: ListRenderItemInfo<Device>) => {
       return (
